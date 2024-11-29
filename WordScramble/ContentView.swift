@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var errorTitle = ""
     @State private var errorMessage = ""
     @State private var showError = false
+    @State private var score = 0.0
     
     var body: some View {
         
@@ -22,22 +23,9 @@ struct ContentView: View {
                 Section{
                     TextField("Enter Your Word", text:$currWord)
                         .textInputAutocapitalization(.never)
-                    
-                    HStack(spacing: 10) {
-                        ForEach(Array(rootWord), id: \.self) { character in
-                            Button(action: {
-                                currWord.append(character)
-                            }) {
-                                Text(String(character))
-                                    .font(.largeTitle)
-                                    .padding(10) // Padding to make the button large enough for tap interaction
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .clipShape(Circle()) // Make it circular
-                                    .shadow(radius: 3)
-                            }
-                        }
-                    }
+                }
+                Section(header: Text("Current Score")){
+                    Text("\(score)")
                 }
                 
                 Section {
@@ -57,7 +45,25 @@ struct ContentView: View {
             }message: {
                 Text(errorMessage)
             }
+            .toolbar {
+                ToolbarItem(placement: .bottomBar){
+                    Button("Reset"){
+                        resetGame()
+                    }
+                }
+            }
         }
+    }
+    
+    func resetGame(){
+        usedWords = [String]()
+        rootWord = ""
+        currWord = ""
+        errorTitle = ""
+        errorMessage = ""
+        showError = false
+        score = 0.0
+        startGame()
     }
     
     func error(Title : String, Message : String){
@@ -69,6 +75,10 @@ struct ContentView: View {
     func addNewWord(){
         let answer = currWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
+        guard isShorter(word: answer) else{
+            error(Title: "Not Accepted", Message: "Word Length Is Shorter Than 3")
+            return
+        }
         guard isOriginal(word: answer) else {
             error(Title: "Already Taken", Message: "You have already enterd that word")
             return
@@ -83,12 +93,21 @@ struct ContentView: View {
             error(Title: "Invalid Word", Message: "Please Don't write anything in your mind")
             return
         }
+        scoreCalculate(word: currWord)
         
         guard answer.count > 0 else {return}
         withAnimation{
             usedWords.insert(currWord, at: 0)
         }
         currWord=""
+    }
+    func scoreCalculate(word: String){
+        score+=2
+        score+=Double(word.count) * 0.5
+    }
+    
+    func isShorter(word: String) -> Bool{
+        !(currWord.count<3)
     }
     
     func isOriginal(word: String) -> Bool{
